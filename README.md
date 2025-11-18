@@ -47,6 +47,42 @@ psql "$PGDATABASE" -f sql/setup.sql
 
 > **Tip:** the script is idempotent thanks to `DROP TABLE IF EXISTS`, so you can re-run it while iterating.
 
+### Running the SQL setup against PostgreSQL in Docker
+
+If you prefer to keep PostgreSQL isolated inside Docker, follow these steps to run the `sql/setup.sql` script inside the container:
+
+1. **Start a PostgreSQL container** using the official image and expose it on the default port so that local tools (and the COBOL program) can connect:
+
+   ```bash
+   docker run -d --name cobol-postgres \
+     -e POSTGRES_USER=cobol_dev \
+     -e POSTGRES_PASSWORD=secret \
+     -e POSTGRES_DB=cobol_invoice \
+     -p 5432:5432 postgres:15
+   ```
+
+2. **Copy the setup script into the container** (any temporary path works):
+
+   ```bash
+   docker cp sql/setup.sql cobol-postgres:/tmp/setup.sql
+   ```
+
+3. **Execute the script with `psql` inside the running container, feeding it the credentials defined above:**
+
+   ```bash
+   docker exec -it cobol-postgres \
+     psql -U cobol_dev -d cobol_invoice -f /tmp/setup.sql
+   ```
+
+4. **(Optional) Confirm the tables exist** by running a quick query:
+
+   ```bash
+   docker exec -it cobol-postgres \
+     psql -U cobol_dev -d cobol_invoice -c '\dt'
+   ```
+
+With those steps complete, the COBOL program can connect to `localhost:5432` using the same `PG*` environment variables listed above.
+
 ## Building and running the COBOL invoice generator
 
 The helper script `scripts/run_invoice.sh` compiles the COBOL program (placing the executable in `build/invoice_generator`) and then runs it for a specific invoice ID. The script accepts a single optional argument – the invoice ID – and defaults to `1`.
