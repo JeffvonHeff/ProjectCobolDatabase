@@ -1,0 +1,21 @@
+==========================================
+            COBOL INVOICE #INV-1002
+==========================================
+Customer:  Nikki Navarro
+Email:     nikki.navarro@example.com
+Company:   Blue Marble Analytics
+
+Invoice Date : 2024-04-12    Due Date : 2024-05-12
+Payment Terms: Net 30
+
+Line Items
+------------------------------------------
+Qty  Description                     Price       Amount
+  2  Premium Support Retainer     1200.00     2400.00
+  5  Analytics Workshop Pass        75.00      375.00
+------------------------------------------
+Subtotal                                      2775.00
+Tax (8.50%)                                    235.88
+Grand Total                                  3010.88
+
+Notes: Thanks for partnering with us on the Q2 enablement workshops.
