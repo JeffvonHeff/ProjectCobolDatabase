@@ -6,7 +6,17 @@
        CONFIGURATION SECTION.
        SOURCE-COMPUTER. GNUCOBOL.
 
+       INPUT-OUTPUT SECTION.
+       FILE-CONTROL.
+           SELECT INVOICE-FILE ASSIGN TO "invoice.txt"
+               ORGANIZATION IS LINE SEQUENTIAL.
+
        DATA DIVISION.
+       FILE SECTION.
+
+       FD  INVOICE-FILE.
+       01  INVOICE-RECORD       PIC X(200).
+
        WORKING-STORAGE SECTION.
 
        EXEC SQL INCLUDE sqlca END-EXEC.
@@ -50,17 +60,19 @@
        01  WS-TAX-RATE-DISP    PIC ZZ9.99.
        01  WS-TAX-AMT-DISP     PIC Z(7)9.99.
        01  WS-TOTAL-DISP       PIC Z(7)9.99.
-       01  NEW-LINE            PIC X VALUE X'0A'.
+       01  WS-OUTPUT-LINE      PIC X(200).
 
        PROCEDURE DIVISION.
        MAIN-LOGIC.
            PERFORM INITIALIZE-ENVIRONMENT
+           PERFORM OPEN-INVOICE-FILE
            PERFORM CONNECT-TO-DATABASE
            PERFORM FETCH-INVOICE-HEADER
            PERFORM DISPLAY-HEADER
            PERFORM FETCH-INVOICE-LINES
            PERFORM DISPLAY-TOTALS
            PERFORM DISCONNECT-DB
+           PERFORM CLOSE-INVOICE-FILE
            GOBACK.
 
        INITIALIZE-ENVIRONMENT.
@@ -133,19 +145,51 @@
            PERFORM CHECK-SQL-STATUS.
 
        DISPLAY-HEADER.
-           DISPLAY "==========================================".
-           DISPLAY "            COBOL INVOICE #" WS-INVOICE-NUMBER.
-           DISPLAY "==========================================".
-           DISPLAY "Customer:  " WS-CUSTOMER-NAME.
-           DISPLAY "Email:     " WS-CUSTOMER-EMAIL.
-           DISPLAY "Company:   " WS-COMPANY-NAME.
-           DISPLAY NEW-LINE.
-           DISPLAY "Invoice Date : " WS-INVOICE-DATE "    Due Date : " WS-DUE-DATE.
-           DISPLAY "Payment Terms: " WS-PAYMENT-TERMS.
-           DISPLAY NEW-LINE.
-           DISPLAY "Line Items".
-           DISPLAY "------------------------------------------".
-           DISPLAY "Qty  Description                     Price       Amount".
+           MOVE "==========================================" TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "            COBOL INVOICE #" DELIMITED BY SIZE
+                  WS-INVOICE-NUMBER DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE "==========================================" TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Customer:  " DELIMITED BY SIZE
+                  WS-CUSTOMER-NAME DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Email:     " DELIMITED BY SIZE
+                  WS-CUSTOMER-EMAIL DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Company:   " DELIMITED BY SIZE
+                  WS-COMPANY-NAME DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           PERFORM OUTPUT-BLANK-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Invoice Date : " DELIMITED BY SIZE
+                  WS-INVOICE-DATE DELIMITED BY SIZE
+                  "    Due Date : " DELIMITED BY SIZE
+                  WS-DUE-DATE DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Payment Terms: " DELIMITED BY SIZE
+                  WS-PAYMENT-TERMS DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           PERFORM OUTPUT-BLANK-LINE.
+           MOVE "Line Items" TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE "------------------------------------------" TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE "Qty  Description                     Price       Amount"
+               TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
 
        FETCH-INVOICE-LINES.
            MOVE 0 TO WS-SUBTOTAL WS-TAX-AMOUNT WS-GRAND-TOTAL.
@@ -188,24 +232,66 @@
            MOVE WS-LINE-QTY TO WS-LINE-QTY-DISP.
            MOVE WS-LINE-PRICE TO WS-LINE-PRICE-DISP.
            MOVE WS-LINE-AMOUNT TO WS-LINE-AMT-DISP.
-           DISPLAY WS-LINE-QTY-DISP "  " WS-LINE-DESC(1:28)
-                   "  " WS-LINE-PRICE-DISP "     " WS-LINE-AMT-DISP.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING WS-LINE-QTY-DISP DELIMITED BY SIZE
+                  "  " DELIMITED BY SIZE
+                  WS-LINE-DESC(1:28) DELIMITED BY SIZE
+                  "  " DELIMITED BY SIZE
+                  WS-LINE-PRICE-DISP DELIMITED BY SIZE
+                  "     " DELIMITED BY SIZE
+                  WS-LINE-AMT-DISP DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
 
        DISPLAY-TOTALS.
            MOVE WS-SUBTOTAL TO WS-SUBTOTAL-DISP.
            MOVE WS-TAX-RATE TO WS-TAX-RATE-DISP.
            MOVE WS-TAX-AMOUNT TO WS-TAX-AMT-DISP.
            MOVE WS-GRAND-TOTAL TO WS-TOTAL-DISP.
-           DISPLAY "------------------------------------------".
-           DISPLAY "Subtotal                                      " WS-SUBTOTAL-DISP.
-           DISPLAY "Tax (" WS-TAX-RATE-DISP "%)                               " WS-TAX-AMT-DISP.
-           DISPLAY "Grand Total                                  " WS-TOTAL-DISP.
-           DISPLAY NEW-LINE.
-           DISPLAY "Notes: " WS-INVOICE-NOTES.
+           MOVE "------------------------------------------" TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Subtotal                                      " DELIMITED BY SIZE
+                  WS-SUBTOTAL-DISP DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Tax (" DELIMITED BY SIZE
+                  WS-TAX-RATE-DISP DELIMITED BY SIZE
+                  "%)                               " DELIMITED BY SIZE
+                  WS-TAX-AMT-DISP DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Grand Total                                  " DELIMITED BY SIZE
+                  WS-TOTAL-DISP DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
+           PERFORM OUTPUT-BLANK-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           STRING "Notes: " DELIMITED BY SIZE
+                  WS-INVOICE-NOTES DELIMITED BY SIZE
+                  INTO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
 
        DISCONNECT-DB.
            EXEC SQL COMMIT WORK END-EXEC.
            EXEC SQL DISCONNECT ALL END-EXEC.
+
+       OPEN-INVOICE-FILE.
+           OPEN OUTPUT INVOICE-FILE.
+
+       CLOSE-INVOICE-FILE.
+           CLOSE INVOICE-FILE.
+
+       OUTPUT-LINE.
+           DISPLAY WS-OUTPUT-LINE.
+           MOVE WS-OUTPUT-LINE TO INVOICE-RECORD.
+           WRITE INVOICE-RECORD.
+
+       OUTPUT-BLANK-LINE.
+           MOVE SPACES TO WS-OUTPUT-LINE.
+           PERFORM OUTPUT-LINE.
 
        CHECK-SQL-STATUS.
            IF SQLCODE NOT = 0 AND SQLCODE NOT = 100
